@@ -164,3 +164,6 @@ vscode/*
 *.zip
 images_original
 data/samples/
+
+*.pt
+*.zip
