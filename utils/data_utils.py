@@ -1,5 +1,6 @@
 import os
 
+from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, random_split
 import librosa
 from transformers import AutoFeatureExtractor
@@ -68,6 +69,10 @@ class RawDS(Dataset):
     def __getitem__(self, idx):
         audio_file = self.df.loc[idx, 'file']
         audio, sr = librosa.load(audio_file, sr=SAMPLE_RATE)
+        audio = Tensor(audio)
+        
+        # Making all samples the same length
+        audio, sr = AudioHelper.pad_trunc((audio, sr), SAMPLE_LENGTH_MS)
         return audio, self.df.loc[idx, 'labelId']
     
 def get_train_val(dataset, train_split=0.8, batch_size=16):

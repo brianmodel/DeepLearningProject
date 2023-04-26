@@ -52,7 +52,13 @@ class AudioHelper():
     @staticmethod
     def pad_trunc(aud, max_ms):
         sig, sr = aud
-        num_rows, sig_len = sig.shape
+
+        if len(sig.shape) == 1:
+            num_rows = 1
+            sig_len = sig.shape[0]
+        else:
+            num_rows, sig_len = sig.shape
+            
         max_len = sr//1000 * max_ms
 
         if (sig_len > max_len):
