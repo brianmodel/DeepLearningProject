@@ -58,7 +58,7 @@ class AudioHelper():
             sig_len = sig.shape[0]
         else:
             num_rows, sig_len = sig.shape
-            
+
         max_len = sr//1000 * max_ms
 
         if (sig_len > max_len):
@@ -71,10 +71,15 @@ class AudioHelper():
             pad_end_len = max_len - sig_len - pad_begin_len
 
             # Pad with 0s
-            pad_begin = torch.zeros((num_rows, pad_begin_len))
-            pad_end = torch.zeros((num_rows, pad_end_len))
 
-            sig = torch.cat((pad_begin, sig, pad_end), 1)
+            if len(sig.shape) == 1:
+                pad_begin = torch.zeros(pad_begin_len)
+                pad_end = torch.zeros(pad_end_len)
+                sig = torch.cat((pad_begin, sig, pad_end))
+            else:
+                pad_begin = torch.zeros((num_rows, pad_begin_len))
+                pad_end = torch.zeros((num_rows, pad_end_len))
+                sig = torch.cat((pad_begin, sig, pad_end), 1)
 
         return (sig, sr)
 
