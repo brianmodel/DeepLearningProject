@@ -11,7 +11,7 @@ SAMPLE_RATE = 16000
 
 def set_data_root_dir(rootdir):
     global AUDIO_ROOT, SPLIT_AUDIO_ROOT
-    
-    AUDIO_ROOT = os.path.join(rootdir, '../data/audio')
-    SPLIT_AUDIO_ROOT = os.path.join(rootdir, '../data/samples')
+
+    AUDIO_ROOT = os.path.join(rootdir, 'data/audio')
+    SPLIT_AUDIO_ROOT = os.path.join(rootdir, 'data/samples')
 

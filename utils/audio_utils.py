@@ -71,7 +71,6 @@ class AudioHelper():
             pad_end_len = max_len - sig_len - pad_begin_len
 
             # Pad with 0s
-
             if len(sig.shape) == 1:
                 pad_begin = torch.zeros(pad_begin_len)
                 pad_end = torch.zeros(pad_end_len)

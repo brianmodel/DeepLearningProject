@@ -31,17 +31,17 @@ def save_model(file, model):
 def load_model(file, model):
     model.load_state_dict(torch.load(file, map_location=torch.device('cpu')))
 
-def train(model, train_dl, val_dl, num_epochs, device):
+def train(model, train_dl, val_dl, num_epochs, lr, device):
     # Writing training data to tensorboard
     writer = SummaryWriter(log_dir=os.path.join(SAVE_DIR, "runs"))
 
     # Loss Function, Optimizer and Scheduler
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001,
+    optimizer = torch.optim.Adam(model.parameters(),lr=lr)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=lr,
                                                 steps_per_epoch=int(len(train_dl)),
                                                 epochs=num_epochs,
-                                                anneal_strategy='linear')
+                                                anneal_strategy='cos')
 
     # Repeat for each epoch
     for epoch in range(num_epochs):
@@ -71,6 +71,7 @@ def train(model, train_dl, val_dl, num_epochs, device):
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             # Keep stats for Loss and Accuracy
             running_loss += loss.item()
@@ -84,8 +85,6 @@ def train(model, train_dl, val_dl, num_epochs, device):
 
             progress_bar.set_description_str(
                 "Batch: %d, Loss: %.4f" % ((i + 1), loss.item()))
-          
-        scheduler.step()
 
         # Print stats at the end of the epoch
         num_batches = len(train_dl)
@@ -103,8 +102,10 @@ def train(model, train_dl, val_dl, num_epochs, device):
         print(f"Training Loss: {avg_loss:.2f} Accuracy: {acc:.2f}")
         print(f"Validation Loss: {val_loss:.2f} Accuracy: {val_acc:.2f}")
 
-        if (epoch+1 % 5 == 0):
-            checkpoint(os.path.join(SAVE_DIR, 'checkpoints'), model, optimizer, scheduler, epoch+1)
+        if ((epoch + 1) % 5 == 0):
+            checkpoint_dir = os.path.join(SAVE_DIR, 'checkpoints')
+            print(f'Checkpointing to {checkpoint_dir}')
+            checkpoint(checkpoint_dir, model, optimizer, scheduler, epoch+1)
     
     save_model(os.path.join(SAVE_DIR, "model.pt"), model)
     print('Finished Training!')
