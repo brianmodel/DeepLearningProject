@@ -31,7 +31,7 @@ def save_model(file, model):
 def load_model(file, model):
     model.load_state_dict(torch.load(file, map_location=torch.device('cpu')))
 
-def train(model, train_dl, val_dl, num_epochs, lr, device):
+def train(model, train_dl, val_dl, num_epochs, lr, device, model_name):
     # Writing training data to tensorboard
     writer = SummaryWriter(log_dir=os.path.join(SAVE_DIR, "runs"))
 
@@ -107,8 +107,9 @@ def train(model, train_dl, val_dl, num_epochs, lr, device):
             print(f'Checkpointing to {checkpoint_dir}')
             checkpoint(checkpoint_dir, model, optimizer, scheduler, epoch+1)
     
-    save_model(os.path.join(SAVE_DIR, "model.pt"), model)
+    save_model(os.path.join(SAVE_DIR, f"{model_name}.pt"), model)
     print('Finished Training!')
+    writer.close()
 
 def evaluate(model, dataloader, criterion, device):
     model.eval()
