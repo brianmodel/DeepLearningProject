@@ -29,6 +29,7 @@ def gen_confusion_matrix(y_true, y_pred, class_dict):
 
 
 def gen_tsne(layers, values, class_dict):
+    fig, axs = plt.subplots()
     for layer in layers:
         tsne = TSNE(n_components=2)
         z = tsne.fit_transform(values[layer])
@@ -91,19 +92,46 @@ def eval(model, loader, layers=[]):
 
     return values
 
-def gen_saliency(model, input_file, device):
+def gen_saliency(model, input_file):
     # Load data for model
     audio, sr = librosa.load(input_file, sr=SAMPLE_RATE)
     audio, sr = AudioHelper.pad_trunc((audio, sr), SAMPLE_LENGTH_MS)
     audio = torch.tensor(audio, requires_grad=True)
     audio = audio.unsqueeze(0)
-    print(audio.requires_grad)
 
     model.eval()
     for param in model.parameters():
         param.requires_grad = False
 
-    print(model(audio))
     saliency = Saliency(model)
     attribution = saliency.attribute(audio, target=3)
-    print(attribution)
+    return attribution
+
+def get_input_from_file(file):
+    audio, sr = librosa.load(file, sr=SAMPLE_RATE)
+    audio = torch.Tensor(audio)
+    audio, sr = AudioHelper.pad_trunc((audio, sr), SAMPLE_LENGTH_MS)
+    audio = audio.unsqueeze(0)
+    return audio
+
+def get_content_loss(model, source, target):
+    activation = {}
+    def get_activation(name):
+        def hook(model, input, output):
+            if (type(input) == tuple):
+                input = input[0]
+            activation[name] = input.detach().to('cpu')
+        return hook
+    
+    hook = get_module_by_name(model, 'linear1').register_forward_hook(get_activation('linear1'))
+    model.eval()
+
+    model(source)
+    src_content = activation['linear1']
+    model(target)
+    target_content = activation['linear1']
+
+    score = torch.nn.functional.cosine_similarity(src_content, target_content)
+
+    hook.remove()
+    return score

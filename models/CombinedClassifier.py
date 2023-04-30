@@ -18,17 +18,22 @@ class CombinedClassifier(nn.Module):
         self.cnn_pipeline = CNNPipeline()
 
         self.cnn = nn.Sequential(OrderedDict([
-          ('conv', nn.Conv2d(1, 8, kernel_size=(5,5), stride=(3,3), padding=(2,2))),
-          ('relu', nn.ReLU()),
-          ('bn', nn.BatchNorm2d(8)),
-          ('pool', nn.MaxPool2d(4,4))
+          ('conv1', nn.Conv2d(1, 8, kernel_size=(4,4), stride=(1,1), padding=(2,2))),
+          ('relu1', nn.ReLU()),
+          ('bn1', nn.BatchNorm2d(8)),
+          ('pool1', nn.MaxPool2d(4,4)),
+          ('conv2', nn.Conv2d(8, 10, kernel_size=(3,3), stride=(1,1))),
+          ('relu2', nn.ReLU()),
+          ('bn2', nn.BatchNorm2d(10)),
+          ('pool2', nn.MaxPool2d(3,3))
         ]))
 
         self.ast_model = ASTModel.from_pretrained('bookbot/distil-ast-audioset')
         for param in self.ast_model.parameters():
             param.requires_grad = False
 
-        self.linear1 = nn.Linear(768+520, 100)
+        self.dropout = nn.Dropout(p=0.7)
+        self.linear1 = nn.Linear(768+480, 100)
         self.relu2 = nn.ReLU()
         self.linear2 = nn.Linear(100, 10)
     
@@ -37,6 +42,7 @@ class CombinedClassifier(nn.Module):
         x_pretrained = x_pretrained.to(self.device)
         x_pretrained = self.ast_model(input_values=x_pretrained).pooler_output
 
+        x_pretrained = self.dropout(x_pretrained)
         x = x.to(self.device)
         x_cnn = self.cnn_pipeline(x)
         if len(x_cnn.shape) == 3:
@@ -47,12 +53,13 @@ class CombinedClassifier(nn.Module):
 
         x_combined = torch.cat((x_pretrained, x_cnn), dim=1)
 
+        # x = self.dropout(x_combined)
         x = self.linear1(x_combined)
         x = self.relu2(x)
         x = self.linear2(x)
 
         return x
-
+    
 
 # class ASTPipeline(nn.Module):
 #     def __init__(self):

@@ -23,7 +23,7 @@ def load_checkpoint(file, model, scheduler, optimizer):
       model.load_state_dict(checkpoint['state_dict'])
       optimizer.load_state_dict(checkpoint['optimizer'])
       scheduler.load_state_dict(checkpoint['scheduler'])
-      return model, optimizer, checkpoint['epoch']
+      return model, optimizer, scheduler, checkpoint['epoch']
 
 def save_model(file, model):
     torch.save(model.state_dict(), file)
@@ -31,7 +31,7 @@ def save_model(file, model):
 def load_model(file, model):
     model.load_state_dict(torch.load(file, map_location=torch.device('cpu')))
 
-def train(model, train_dl, val_dl, num_epochs, lr, device, model_name):
+def train(model, train_dl, val_dl, num_epochs, lr, device, model_name, checkpoint_file=None):
     # Writing training data to tensorboard
     writer = SummaryWriter(log_dir=os.path.join(SAVE_DIR, "runs"))
 
@@ -42,9 +42,14 @@ def train(model, train_dl, val_dl, num_epochs, lr, device, model_name):
                                                 steps_per_epoch=int(len(train_dl)),
                                                 epochs=num_epochs,
                                                 anneal_strategy='cos')
+    start_epoch = 0
+    if checkpoint_file is not None:
+        print('loading checkpoint')
+        model, optimizer, scheduler, start_epoch = load_checkpoint(checkpoint_file, model, scheduler, optimizer)
+        print(scheduler.last_epoch)
 
     # Repeat for each epoch
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         model.train()
         print("-----------------------------------")
         print("Epoch %d" % (epoch+1))

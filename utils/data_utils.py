@@ -1,5 +1,6 @@
 import os
 
+import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, random_split
 import librosa
@@ -79,7 +80,8 @@ def get_train_val(dataset, train_split=0.8, batch_size=16):
     num_items = len(dataset)
     num_train = round(num_items * train_split)
     num_val = num_items - num_train
-    train_ds, val_ds = random_split(dataset, [num_train, num_val])
+    generator = torch.Generator().manual_seed(42)
+    train_ds, val_ds = random_split(dataset, [num_train, num_val], generator=generator)
 
     # Create training and validation data loaders
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)

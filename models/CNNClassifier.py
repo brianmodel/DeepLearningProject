@@ -14,7 +14,10 @@ class CNNPipeline(nn.Module):
         # rechan = AudioHelper.rechannel(audio, 1)
         # sgram = AudioTransformations.spectrogram(rechan, n_mels=64, n_fft=1024, hop_len=None)
         # return sgram
-        return self.spec(audio)
+        spec = self.spec(audio)
+        if self.training:
+            spec = AudioTransformations.spectrogram_augment(spec)
+        return spec
     
 class CNNClassifier(nn.Module):
     def __init__(self):
